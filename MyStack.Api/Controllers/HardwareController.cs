@@ -16,10 +16,23 @@ namespace MyStack.Api.Controllers
         {
             _context = context;
         }
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<HardwareItem>>> GetItems()
+        public async Task<ActionResult<IEnumerable<HardwareResponseDTO>>> GetItems()
         {
-            return await _context.HardwareItems.ToListAsync();
+            var items = await _context.HardwareItems
+                .Where(x => x.IsActive)
+                .Select(item => new HardwareResponseDTO(
+                    item.Id,
+                    item.Name,
+                    item.Brand,
+                    item.Price,
+                    item.CreatedAt,
+                    item.LastUpdatedAt
+            ))
+             .ToListAsync();
+
+            return Ok(items);
         }
 
         [HttpPost]
@@ -32,11 +45,55 @@ namespace MyStack.Api.Controllers
                 Brand = dto.Brand,
                 Price = dto.Price,
                 CreatedAt = DateTime.UtcNow,
+                IsActive = true
             };
             _context.HardwareItems.Add(newItem);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetItems), new { id = newItem.Id }, newItem);
-        } 
+            var response = new HardwareResponseDTO(
+                newItem.Id,
+                newItem.Name,
+                newItem.Brand,
+                newItem.Price,
+                newItem.CreatedAt,
+                newItem.LastUpdatedAt 
+            );
+
+            return CreatedAtAction(nameof(GetItemById), new { id = response.Id }, response);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<HardwareItem>> GetItemById(Guid id)
+        {
+            var item = await _context.HardwareItems
+                .FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
+            if (item == null)
+            {
+                return NotFound();
+            }
+            var response = new HardwareResponseDTO(
+                item.Id,
+                item.Name,
+                item.Brand,
+                item.Price,
+                item.CreatedAt,
+                item.LastUpdatedAt
+            );
+
+            return Ok(response);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var item = await _context.HardwareItems.FindAsync(id);
+            if (item == null) return NotFound();
+
+            item.IsActive = false;
+            item.LastUpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }
