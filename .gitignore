@@ -480,3 +480,11 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+
+# --- Docker & Database ---
+# Ignorar a pasta de dados do PostgreSQL do container
+postgres_data/
+
+# Ignorar arquivos de ambiente que podem conter senhas
+.env
