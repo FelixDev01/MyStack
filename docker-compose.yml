@@ -21,3 +21,14 @@ services:
       environment:
         - ConnectionStrings__DefaultConnection=Host=db_mystack;Port=5432;Database=mystackdb;Username=postgres;Password=1234
         - ASPNETCORE_ENVIRONMENT=Development      
+
+  mystack-web:
+    container_name: mystack_web
+    build:
+      context: ./MyStack.Web
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080/api
+    depends_on:
+      - mystack_api
